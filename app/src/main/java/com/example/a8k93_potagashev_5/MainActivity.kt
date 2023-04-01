@@ -1,19 +1,25 @@
 package com.example.a8k93_potagashev_5
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ListView
+import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
     private var items = ArrayList<Item>()
+    private lateinit var con: SQLiteDatabase;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        val db = SQLiteHelper(this);
+        con = db.writableDatabase
+        getItems()
 
         // Настройка списка
         val listView: ListView = findViewById(R.id.listItems)
@@ -39,14 +45,50 @@ class MainActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK)
         {
             val index: Int = data?.getIntExtra("index", -1) ?: -1
-            val item: Item = data?.getParcelableExtra("item") ?:
-            Item()
-            if (index != -1)
+            val item: Item = data?.getParcelableExtra("item") ?: Item()
+
+            val cv = ContentValues()
+            cv.put("kind", item.kind)
+            cv.put("title", item.title)
+            cv.put("price", item.price)
+            cv.put("weight", item.weight)
+            cv.put("photo", item.photo)
+            if (index != -1) {
                 items[index] = item
-            else
+                cv.put("id", item.id)
+                con.update("items", cv, "id=?", arrayOf(item.id.toString()))
+            }
+            if (index == 2) {
+                items.remove(items[index])
+                con.execSQL("delete from items where id=?", arrayOf(item.id.toString()))
+            }
+            else {
                 items.add(item)
+                con.insert("items", null, cv)
+            }
+
             val listView: ListView = findViewById(R.id.listItems)
             (listView.adapter as ItemAdapter).notifyDataSetChanged()
         }
+    }
+
+    private fun getItems() {
+        val cursor = con.query(
+            "items",
+            arrayOf("id", "kind", "title", "price", "weight", "photo"),
+            null, null, null, null, null)
+        cursor.moveToFirst()
+        while (!cursor.isAfterLast) {
+            val s = Item()
+            s.id = cursor.getInt(0)
+            s.kind = cursor.getString(1)
+            s.title = cursor.getString(2)
+            s.price = cursor.getDouble(3)
+            s.weight = cursor.getDouble(4)
+            s.photo = cursor.getString(5)
+            items.add(s)
+            cursor.moveToNext()
+        }
+        cursor.close()
     }
 }

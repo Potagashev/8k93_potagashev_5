@@ -6,6 +6,7 @@ import android.os.Parcelable
 
 class Item() : Parcelable {
 
+    var id: Int = 0;
     // Тип
     var kind: String = ""
     // Название
@@ -17,19 +18,24 @@ class Item() : Parcelable {
     // Сводная информация
     val info: String
         get() = "$kind $title ($price ₽) $weight"
+    var photo: String = ""
 
     constructor(parcel: Parcel) : this() {
-        kind = parcel.readString() ?: ""
-        title = parcel.readString() ?: ""
+        id = parcel.readInt()
+        kind = parcel.readString().orEmpty()
+        title = parcel.readString().orEmpty()
         price = parcel.readDouble()
         weight = parcel.readDouble()
+        photo = parcel.readString().orEmpty()
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeInt(id)
         parcel.writeString(kind)
         parcel.writeString(title)
         parcel.writeDouble(price)
         parcel.writeDouble(weight)
+        parcel.writeString(photo)
     }
 
     override fun describeContents(): Int {
@@ -45,4 +51,5 @@ class Item() : Parcelable {
             return arrayOfNulls(size)
         }
     }
+
 }
